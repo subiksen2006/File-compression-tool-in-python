@@ -1,0 +1,94 @@
+import heapq
+import os
+from collections import defaultdict
+
+# Step 1: Create a class for Huffman Encoding
+class HuffmanCoding:
+    def __init__(self):
+        self.heap = []
+        self.codes = {}
+        self.reverse_codes = {}
+    
+    # Step 2: Calculate frequency of each character
+    def calculate_frequency(self, text):
+        frequency = defaultdict(int)
+        for char in text:
+            frequency[char] += 1
+        return frequency
+
+    # Step 3: Build a priority queue (min heap) from frequency
+    def build_heap(self, frequency):
+        for key in frequency:
+            heapq.heappush(self.heap, (frequency[key], key))
+    
+    # Step 4: Build the Huffman Tree
+    def build_tree(self):
+        while len(self.heap) > 1:
+            left = heapq.heappop(self.heap)
+            right = heapq.heappop(self.heap)
+            merged = (left[0] + right[0], left, right)
+            heapq.heappush(self.heap, merged)
+        
+        root = heapq.heappop(self.heap)
+        self.build_codes(root, "")
+    
+    # Step 5: Generate the Huffman Codes
+    def build_codes(self, root, current_code):
+        if len(root) == 2:
+            symbol = root[1]
+            self.codes[symbol] = current_code
+            self.reverse_codes[current_code] = symbol
+            return
+        
+        self.build_codes(root[1], current_code + "0")
+        self.build_codes(root[2], current_code + "1")
+    
+    # Step 6: Compress the text file
+    def compress(self, text):
+        compressed_text = ''.join([self.codes[char] for char in text])
+        return compressed_text
+    
+    # Step 7: Decompress the compressed text
+    def decompress(self, compressed_text):
+        current_code = ""
+        decompressed_text = ""
+        for bit in compressed_text:
+            current_code += bit
+            if current_code in self.reverse_codes:
+                decompressed_text += self.reverse_codes[current_code]
+                current_code = ""
+        return decompressed_text
+
+# Step 8: Function to read and write files
+def read_file(file_path):
+    with open(file_path, 'r') as file:
+        return file.read()
+
+def write_file(file_path, content):
+    with open(file_path, 'w') as file:
+        file.write(content)
+
+# Main program to use the HuffmanCoding class
+if __name__ == "__main__":
+    # Path to the text file to compress
+    input_file = "example.txt"  # Replace with your file path
+    output_file = "compressed.txt"
+    decompressed_file = "decompressed.txt"
+
+    text = read_file(input_file)
+
+    huffman_coding = HuffmanCoding()
+    
+    # Compress the file
+    frequency = huffman_coding.calculate_frequency(text)
+    huffman_coding.build_heap(frequency)
+    huffman_coding.build_tree()
+    
+    compressed_text = huffman_coding.compress(text)
+    write_file(output_file, compressed_text)
+    print("File compressed successfully!")
+    
+    # Decompress the file
+    decompressed_text = huffman_coding.decompress(compressed_text)
+    write_file(decompressed_file, decompressed_text)
+    print("File decompressed successfully!")
